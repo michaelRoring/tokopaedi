@@ -1,6 +1,7 @@
 const {User, Item, Transaction, TransactionItem, ItemDetail} = require('../models');
 const bcrypt = require ('bcryptjs');
 const {Op} = require ('sequelize');
+const session = require('express-session')
 
 class Controller {
 
@@ -39,24 +40,39 @@ class Controller {
                 email: email
             }
         })
-        .then(result => {
-            if (result) {
-                if(result) {
-                    const isValid = bcrypt.compareSync(password, result.password);
-                    if (isValid) {
-                        return res.send("sukses");
-                    } else {
-                        const error = 'Password invalid';
-                        return res.redirect(`/login?error=${error}`)
-                    }
+        .then(user => {
+            
+            if(user) {
+                const isValid = bcrypt.compareSync(password, user.password);
+                if (isValid) {
+        
+                    //set session
+                    req.session.email = user.email;
+                    return res.redirect('/tokopaedi');
+                } else {
+                    const error = 'Password invalid';
+                    return res.redirect(`/login?error=${error}`)
                 }
-            } else {
-                res.redirect('/login');
             }
+        
         })
         .catch(err => res.send(err));
     }
 
+    // home
+    static tokopaedi(req, res) {
+        Item.findAll()
+            .then(items => {
+                res.render('homepage', {items});
+            })
+            .catch(err => res.send(err));
+    }
+
+
+    // change profile
+    static changeProfile(req, res) {
+        console.log(req.session.email);
+    }
 }
 
 module.exports = Controller;
